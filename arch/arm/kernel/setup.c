@@ -937,6 +937,10 @@ void __init setup_arch(char **cmdline_p)
 	const struct machine_desc *mdesc;
 
 	setup_processor();
+#ifdef CONFIG_ARM_DTB_FORCE_ADDR
+	__atags_pointer = CONFIG_ARM_DTB_ADDR;
+	pr_info("DTB address: 0x%x\n", CONFIG_ARM_DTB_ADDR);
+#endif
 	mdesc = setup_machine_fdt(__atags_pointer);
 	if (!mdesc)
 		mdesc = setup_machine_tags(__atags_pointer, __machine_arch_type);

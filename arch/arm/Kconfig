@@ -1878,6 +1878,19 @@ config ZBOOT_ROM
 	  Say Y here if you intend to execute your compressed kernel image
 	  (zImage) directly from ROM or flash.  If unsure, say N.
 
+config ARM_DTB_FORCE_ADDR
+	bool "Force the location of the devicetree blob"
+	depends on OF
+	help
+	  This option allows to hardcode the devicetree blob address.
+
+config ARM_DTB_ADDR
+	hex "DTB Physical Location"
+	depends on ARM_DTB_FORCE_ADDR
+	default "0x00000000"
+	help
+	  This physical location of the devicetree blob
+
 config ARM_APPENDED_DTB
 	bool "Use appended device tree blob to zImage (EXPERIMENTAL)"
 	depends on OF
