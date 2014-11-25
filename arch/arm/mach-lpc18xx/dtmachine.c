@@ -3,9 +3,9 @@
 #include <asm/v7m.h>
 #include <asm/mach/arch.h>
 
-static const char *const lpc18xx_43xx_compat[] __initconst = {
-	"ea,lpc4357-developers-kit",
-	NULL
+static const char * const lpc18xx_43xx_compat[] = {
+	"nxp,lpc18xx",
+	NULL,
 };
 
 DT_MACHINE_START(LPC18XXDT, "NXP LPC18xx/43xx (Device Tree Support)")
