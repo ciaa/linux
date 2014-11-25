@@ -1,0 +1,121 @@
+/*
+ * CIAA NXP LPC4337
+ *
+ * Copyright (C) 2014 VanguardiaSur - www.vanguardiasur.com.ar
+ *
+ */
+
+/dts-v1/;
+#include "lpc18xx.dtsi"
+
+&pinctrl {
+
+	uart2_pins: uart2-pins {
+		uart2_rx_cfg {
+			pins = "p7_2";
+			function = "uart2";
+			bias-disable;
+			input-enable;
+		};
+
+		uart2_tx_cfg {
+			pins = "p7_1";
+			function = "uart2";
+			bias-disable;
+		};
+	};
+
+	uart3_pins: uart3-pins {
+		uart3_rx_cfg {
+			pins = "p2_4";
+			function = "uart3";
+			bias-disable;
+			input-enable;
+		};
+
+		uart3_tx_cfg {
+			pins = "p2_3";
+			function = "uart3";
+			bias-disable;
+		};
+	};
+
+	enet_rmii_pins: enet-rmii-pins {
+		enet_rmii_rxd_cfg {
+			pins = "p1_15", "p0_0";
+			function = "enet";
+			input-enable;
+		};
+
+		enet_rmii_txd_cfg {
+			pins = "p1_18", "p1_20";
+			function = "enet";
+		};
+
+		enet_rmii_rx_dv_cfg {
+			pins = "p1_16";
+			function = "enet";
+			input-enable;
+		};
+
+		enet_rmii_tx_en_cfg {
+			pins = "p0_1";
+			function = "enet";
+		};
+
+		enet_ref_clk_cfg {
+			pins = "p1_19";
+			function = "enet";
+			input-enable;
+		};
+
+		enet_mdio_cfg {
+			pins = "p1_17";
+			function = "enet";
+			input-enable;
+		};
+
+		enet_mdc_cfg {
+			pins = "p7_7";
+			function = "enet";
+			bias-disable;
+		};
+	};
+};
+
+&mac {
+	status = "okay";
+	phy-mode = "rmii";
+	pinctrl-names = "default";
+	pinctrl-0 = <&enet_rmii_pins>;
+};
+
+&enet_tx_clk {
+	clock-frequency = <50000000>;
+};
+
+&uart2 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart2_pins>;
+};
+
+&uart3 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart3_pins>;
+};
+
+/ {
+	model = "CIAA NXP LPC4337";
+	compatible = "ciaa,lpc4337", "nxp,lpc18xx";
+
+	chosen {
+		bootargs = "console=ttyS0,115200 earlyprintk";
+	};
+
+	memory {
+		device_type = "memory";
+		reg = <0x28000000 0x0800000>; /* 8 MB */
+	};
+};
