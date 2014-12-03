@@ -111,8 +111,8 @@ static int lpc18xx_ehci_probe(struct platform_device *pdev)
 
 	ehci->caps = hcd->regs + LPC18XX_EHCI_CAPS_OFFSET;
 
-	hcd->phy = devm_usb_get_phy_by_phandle(&pdev->dev, "usb-phy", 0);
-	if (IS_ERR(hcd->phy)) {
+	hcd->usb_phy = devm_usb_get_phy_by_phandle(&pdev->dev, "usb-phy", 0);
+	if (IS_ERR(hcd->usb_phy)) {
 		dev_err(&pdev->dev, "Unable to find transceiver\n");
 		ret = -EPROBE_DEFER;
 		goto put_hcd;
@@ -128,7 +128,7 @@ static int lpc18xx_ehci_probe(struct platform_device *pdev)
 
 
 	/* hmm, why call otg_set_x  ? */
-	ret = otg_set_host(hcd->phy->otg, &hcd->self);
+	ret = otg_set_host(hcd->usb_phy->otg, &hcd->self);
 	if (ret < 0) {
 		dev_err(&pdev->dev, "Unable to register with transceiver\n");
 		goto put_clk;
@@ -157,7 +157,7 @@ static int lpc18xx_ehci_remove(struct platform_device *pdev)
 	struct usb_hcd *hcd = platform_get_drvdata(pdev);
 	struct lpc18xx_ehci_hcd *lpc = (struct lpc18xx_ehci_hcd *)hcd_to_ehci(hcd)->priv;
 
-	otg_set_host(hcd->phy->otg, NULL);
+	otg_set_host(hcd->usb_phy->otg, NULL);
 	usb_remove_hcd(hcd);
 
 	usb_put_hcd(hcd);
