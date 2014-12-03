@@ -14,6 +14,7 @@
 #include <linux/kernel.h>
 #include <linux/mfd/syscon.h>
 #include <linux/of.h>
+#include <linux/platform_device.h>
 #include <linux/regmap.h>
 #include <linux/slab.h>
 
@@ -164,8 +165,9 @@ static struct clk_onecell_data clk_base_data = {
 	.clk_num = CREG_CLK_MAX,
 };
 
-static void __init lpc18xx_creg_clk_init(struct device_node *np)
+static int lpc18xx_creg_clk_probe(struct platform_device *pdev)
 {
+	struct device_node *np = pdev->dev.of_node;
 	const char *clk_32khz_parent;
 	struct regmap *syscon;
 	const char *name;
@@ -174,7 +176,7 @@ static void __init lpc18xx_creg_clk_init(struct device_node *np)
 	syscon = syscon_regmap_lookup_by_compatible("nxp,lpc1850-creg");
 	if (IS_ERR(syscon)) {
 		pr_err("%s: syscon lookup failed\n", __func__);
-		return;
+		return PTR_ERR(syscon);
 	}
 
 	/* Get creg clk names from DT */
@@ -197,6 +199,19 @@ static void __init lpc18xx_creg_clk_init(struct device_node *np)
 							&clk_creg_names[CREG_CLK_32KHZ],
 							1, &clk_creg_1k);
 
-	of_clk_add_provider(np, of_clk_src_onecell_get, &clk_base_data);
+	return of_clk_add_provider(np, of_clk_src_onecell_get, &clk_base_data);
 }
-CLK_OF_DECLARE(lpc18xx_creg_clk, "nxp,lpc1850-creg-clks", lpc18xx_creg_clk_init);
+
+static const struct of_device_id lpc18xx_creg_clk_dt_ids[] = {
+	{ .compatible = "nxp,lpc1850-creg-clks" },
+	{ }
+};
+
+static struct platform_driver lpc18xx_creg_clk_driver = {
+	.driver = {
+		.name = "lpc18xx_creg_clk",
+		.of_match_table = lpc18xx_creg_clk_dt_ids,
+	},
+	.probe = lpc18xx_creg_clk_probe,
+};
+module_platform_driver(lpc18xx_creg_clk_driver);
