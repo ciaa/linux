@@ -163,13 +163,13 @@
 			compatible = "nxp,lpc1850-creg", "syscon";
 			reg = <0x40043000 0x1000>;
 			clocks = <&ccu1 CLK_CPU_CREG>;
+		};
 
-			creg_clk: creg-clk@0 {
-				compatible = "nxp,lpc1850-creg-clks";
-				clocks = <&xtal32>;
-				clock-output-names = "1khz_clk", "32khz_clk";
-				#clock-cells = <1>;
-			};
+		creg_clk: creg-clk@0 {
+			compatible = "nxp,lpc1850-creg-clks";
+			clocks = <&xtal32>;
+			clock-output-names = "1khz_clk", "32khz_clk";
+			#clock-cells = <1>;
 		};
 
 		rtc: rtc@40046000 {
