@@ -27,8 +27,9 @@
 #define LPC18XX_CCU_DIVSTAT	BIT(27)
 
 /* CCU branch feature bits */
-#define CCU_BRANCH_IS_BUS	BIT(0)
-#define CCU_BRANCH_HAVE_DIV2	BIT(1)
+#define CCU_BRANCH_IS_BUS	 BIT(0)
+#define CCU_BRANCH_HAVE_DIV2	 BIT(1)
+#define CCU_BRANCH_IGNORE_UNUSED BIT(2)
 
 #define to_clk_gate(_hw) container_of(_hw, struct clk_gate, hw)
 
@@ -101,7 +102,7 @@ static struct lpc18xx_clk_branch clk_branches[] = {
 	{BASE_PERIPH_CLK, "periph_core",	CLK_PERIPH_CORE,	0},
 	{BASE_PERIPH_CLK, "periph_sgpio",	CLK_PERIPH_SGPIO,	0},
 
-	{BASE_USB0_CLK,  "usb0",		CLK_USB0,		0},
+	{BASE_USB0_CLK,  "usb0",		CLK_USB0,		CCU_BRANCH_IGNORE_UNUSED},
 	{BASE_USB1_CLK,  "usb1",		CLK_USB1,		0},
 	{BASE_SPI_CLK,   "spi",			CLK_SPI,		0},
 	{BASE_ADCHS_CLK, "adchs",		CLK_ADCHS,		0},
@@ -224,6 +225,10 @@ static void lpc18xx_ccu_register_branch_gate_div(struct lpc18xx_clk_branch *bran
 	const struct clk_ops *div_ops = NULL;
 	struct clk_divider *div = NULL;
 	struct clk_hw *div_hw = NULL;
+	unsigned long clk_flags = 0;
+
+	if (branch->flags & CCU_BRANCH_IGNORE_UNUSED)
+		clk_flags |= CLK_IGNORE_UNUSED;
 
 	if (branch->flags & CCU_BRANCH_HAVE_DIV2) {
 		div = kzalloc(sizeof(*div), GFP_KERNEL);
@@ -246,7 +251,7 @@ static void lpc18xx_ccu_register_branch_gate_div(struct lpc18xx_clk_branch *bran
 	branch->clk = clk_register_composite(NULL, branch->name, &parent, 1,
 					     NULL, NULL,
 					     div_hw, div_ops,
-					     &branch->gate.hw, &lpc18xx_ccu_gate_ops, 0);
+					     &branch->gate.hw, &lpc18xx_ccu_gate_ops, clk_flags);
 	if (IS_ERR(branch->clk)) {
 		kfree(div);
 		pr_warn("%s: failed to register %s\n", __func__, branch->name);
