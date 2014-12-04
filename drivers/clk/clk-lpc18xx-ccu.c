@@ -222,7 +222,6 @@ static void lpc18xx_ccu_register_branch_gate_div(struct lpc18xx_clk_branch *bran
 						 const char *parent,
 						 spinlock_t *lock)
 {
-	const struct clk_ops *div_ops = NULL;
 	struct clk_divider *div = NULL;
 	struct clk_hw *div_hw = NULL;
 	unsigned long clk_flags = 0;
@@ -239,9 +238,9 @@ static void lpc18xx_ccu_register_branch_gate_div(struct lpc18xx_clk_branch *bran
 		div->shift = 27;
 		div->width = 1;
 		div->lock = lock;
+		div->flags |= CLK_DIVIDER_READ_ONLY;
 
 		div_hw = &div->hw;
-		div_ops = &clk_divider_ro_ops;
 	}
 
 	branch->gate.reg = branch->offset + base;
@@ -250,7 +249,7 @@ static void lpc18xx_ccu_register_branch_gate_div(struct lpc18xx_clk_branch *bran
 
 	branch->clk = clk_register_composite(NULL, branch->name, &parent, 1,
 					     NULL, NULL,
-					     div_hw, div_ops,
+					     div_hw, &clk_divider_ops,
 					     &branch->gate.hw, &lpc18xx_ccu_gate_ops, clk_flags);
 	if (IS_ERR(branch->clk)) {
 		kfree(div);
