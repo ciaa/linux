@@ -22,6 +22,7 @@
 #include <linux/of.h>
 #include <linux/of_address.h>
 #include <linux/of_irq.h>
+#include <linux/sched_clock.h>
 
 #define LPC32XX_TIMER_IR		0x000
 #define  LPC32XX_TIMER_IR_MR0INT	BIT(0)
@@ -40,6 +41,8 @@ struct lpc32xx_clock_event_ddata {
 	struct clock_event_device evtdev;
 	void __iomem *base;
 };
+
+static void __iomem *timer_base;
 
 static int lpc32xx_clkevt_next_event(unsigned long delta,
 				     struct clock_event_device *evtdev)
@@ -110,9 +113,13 @@ static struct irqaction lpc32xx_clock_event_irq = {
 	.dev_id		= &lpc32xx_clk_event_ddata,
 };
 
+static u64 notrace lpc32xx_read_sched_clock(void)
+{
+	return readl(timer_base + LPC32XX_TIMER_TC);
+}
+
 static int __init lpc32xx_clocksource_init(struct device_node *np)
 {
-	void __iomem *base;
 	unsigned long rate;
 	struct clk *clk;
 	int ret;
@@ -131,19 +138,21 @@ static int __init lpc32xx_clocksource_init(struct device_node *np)
 
 	rate = clk_get_rate(clk);
 
-	base = of_iomap(np, 0);
-	if (!base) {
+	timer_base = of_iomap(np, 0);
+	if (!timer_base) {
 		pr_err("%s: unable to map registers\n", __func__);
 		ret = -EADDRNOTAVAIL;
 		goto err_iomap;
 	}
 
-	writel_relaxed(LPC32XX_TIMER_TCR_CRST, base + LPC32XX_TIMER_TCR);
-	writel_relaxed(0, base + LPC32XX_TIMER_PR);
-	writel_relaxed(0, base + LPC32XX_TIMER_MCR);
-	writel_relaxed(LPC32XX_TIMER_TCR_CEN, base + LPC32XX_TIMER_TCR);
+	writel_relaxed(LPC32XX_TIMER_TCR_CRST, timer_base + LPC32XX_TIMER_TCR);
+	writel_relaxed(0, timer_base + LPC32XX_TIMER_PR);
+	writel_relaxed(0, timer_base + LPC32XX_TIMER_MCR);
+	writel_relaxed(LPC32XX_TIMER_TCR_CEN, timer_base + LPC32XX_TIMER_TCR);
 
-	ret = clocksource_mmio_init(base + LPC32XX_TIMER_TC, "lpc3250 timer",
+	sched_clock_register(lpc32xx_read_sched_clock, 32, rate);
+
+	ret = clocksource_mmio_init(timer_base + LPC32XX_TIMER_TC, "lpc3250 timer",
 				    rate, 300, 32, clocksource_mmio_readl_up);
 	if (ret) {
 		pr_err("failed to init clocksource (%d)\n", ret);
@@ -153,7 +162,7 @@ static int __init lpc32xx_clocksource_init(struct device_node *np)
 	return 0;
 
 err_clocksource_init:
-	iounmap(base);
+	iounmap(timer_base);
 err_iomap:
 	clk_disable_unprepare(clk);
 err_clk_enable:
@@ -170,7 +179,7 @@ static int __init lpc32xx_clockevent_init(struct device_node *np)
 
 	clk = of_clk_get(np, 0);
 	if (IS_ERR(clk)) {
-		pr_err("%s: clock get failed (%lu)\n", __func__, PTR_ERR(clk));
+		pr_err("cannot get clock!\n");
 		return PTR_ERR(clk);
 	}
 
@@ -213,7 +222,7 @@ static int __init lpc32xx_clockevent_init(struct device_node *np)
 	return 0;
 
 err_get_irq:
-	iounmap(base);
+	iounmap(timer_base);
 err_iomap:
 	clk_disable_unprepare(clk);
 err_clk_enable:
