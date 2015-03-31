@@ -224,7 +224,7 @@
 		};
 
 		rgu: rgu@40053000 {
-			compatible = "nxp,lpc1850-rgu";
+			compatible = "nxp,lpc1850-reset";
 			reg = <0x40053000 0x1000>;
 			#reset-cells = <1>;
 			clocks = <&cgu BASE_SAFE_CLK>, <&ccu1 CLK_CPU_BUS>;
