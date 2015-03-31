@@ -1,0 +1,180 @@
+/*
+ * Hitex LPC4350 Development Kit
+ *
+ * Copyright (C) 2014 VanguardiaSur - www.vanguardiasur.com.ar
+ *
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+
+#include "lpc18xx.dtsi"
+
+&pinctrl {
+
+	uart0_pins: uart0-pins {
+		uart0_rx_cfg {
+			pins = "pf_11";
+			function = "uart0";
+			bias-disable;
+			input-enable;
+		};
+
+		uart0_tx_cfg {
+			pins = "pf_10";
+			function = "uart0";
+			bias-disable;
+		};
+	};
+
+	i2c0_pins: i2c0-pins {
+		i2c0_pins_cfg {
+			pins = "i2c0_scl", "i2c0_sda";
+			function = "i2c0";
+			input-enable;
+		};
+	};
+
+	rgb_pins: pinmux_led_pins {
+		redled_cfg {
+			pins = "pe_5";
+			function = "gpio";
+		};
+
+		greenled_cfg {
+			pins = "pe_6";
+			function = "gpio";
+		};
+
+		blueled_cfg {
+			pins = "pe_8";
+			function = "gpio";
+		};
+	};
+
+	enet_mii_pins: enet-mii-pins {
+
+		enet_mii_rxd_cfg {
+			pins = "p1_15", "p0_0", "p9_3", "p9_2";
+			function = "enet";
+			input-enable;
+		};
+
+		enet_mii_txd_cfg {
+			pins = "p1_18", "p1_20", "p9_4", "p9_5";
+			function = "enet";
+		};
+
+		enet_mii_crs_cfg {
+			pins = "p9_0";
+			function = "enet";
+			input-enable;
+		};
+
+		enet_mii_tx_clk_cfg {
+			pins = "p1_19";
+			function = "enet";
+			input-enable;
+		};
+
+		enet_mii_rx_clk_cfg {
+			pins = "pc_0";
+			function = "enet";
+			input-enable;
+		};
+
+		enet_mmi_rx_er_cfg {
+			pins = "p9_1";
+			function = "enet";
+			input-enable;
+		};
+
+		enet_mmi_tx_en_cfg {
+			pins = "p0_1";
+			function = "enet";
+		};
+
+	};
+
+};
+
+&uart0 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pins>;
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c0_pins>;
+	clock-frequency = <400000>;
+
+	eeprom@50 {
+		compatible = "microchip,24c02";
+		reg = <0x50>;
+	};
+
+	pca9673@48 {
+		/* FIXME: Not detected by i2cdetect. Need jumper setting? */
+		compatible = "nxp,pca9673";
+		reg = <0x48>;
+	};
+
+	sensor@18 {
+		compatible = "jc42";
+		reg = <0x18>;
+	};
+};
+
+&mac {
+	status = "okay";
+	phy-mode = "mii";
+	pinctrl-names = "default";
+	pinctrl-0 = <&enet_mii_pins>;
+};
+
+&enet_tx_clk {
+	clock-frequency = <25000000>;
+};
+
+/ {
+	model = "Hitex LPC4350 Development Kit";
+	compatible = "hitex,lpc4350-devkit", "nxp,lpc18xx";
+
+	chosen {
+		bootargs = "console=ttyS0,115200 earlyprintk";
+	};
+
+	memory {
+		device_type = "memory";
+		reg = <0x28000000 0x800000>;
+	};
+
+	gpio_leds {
+		compatible = "gpio-leds";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&rgb_pins>;
+
+		red {
+			label = "redled";
+			gpios = <&gpio LPC_GPIO(7,5) GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		green {
+			label = "greenled";
+			gpios = <&gpio LPC_GPIO(7,6) GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		blue {
+			label = "blueled";
+			gpios = <&gpio LPC_GPIO(7,8) GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+	};
+
+};
