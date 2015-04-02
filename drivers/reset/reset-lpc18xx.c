@@ -30,6 +30,9 @@
 #define  LPC18XX_RGU_CTRL0_CORE		BIT(0)
 #define LPC18XX_RGU_CTRL1		0x104
 
+#define LPC18xx_RGU_ACTIVE_STATUS0	0x150
+#define LPC18xx_RGU_ACTIVE_STATUS1	0x154
+
 struct lpc18xx_reset_data {
 	struct reset_controller_dev rcdev;
 	struct clk *clk_delay;
@@ -52,15 +55,74 @@ static int lpc18xx_reset_assert(struct reset_controller_dev *rcdev,
 				unsigned long id)
 {
 	struct lpc18xx_reset_data *rc;
-	u32 offset = LPC18XX_RGU_CTRL0;
-	u8 bit;
+	u32 ctrl_offset, status_offset;
+	u32 bit;
+	u32 status;
 
 	rc = container_of(rcdev, struct lpc18xx_reset_data, rcdev);
 
-	offset += (id / LPC18XX_RGU_RESETS_PER_REG) * sizeof(u32);
-	bit = id % LPC18XX_RGU_RESETS_PER_REG;
+	/* Get register offsets */
+	switch (id / LPC18XX_RGU_RESETS_PER_REG) {
+		case 0:
+			ctrl_offset = LPC18XX_RGU_CTRL0;
+			status_offset = LPC18xx_RGU_ACTIVE_STATUS0;
+			break;
+		case 1:
+			ctrl_offset = LPC18XX_RGU_CTRL1;
+			status_offset = LPC18xx_RGU_ACTIVE_STATUS1;
+			break;
+		default:
+			return -EINVAL;
+	}
 
-	writel(bit, rgu_base + offset);
+	bit = BIT(id % LPC18XX_RGU_RESETS_PER_REG);
+
+	/* Current status: 0 = Reset asserted, 1 = No reset.
+	 * It's the opposite to the values for control register.
+	 * */
+	status = readl(rgu_base + status_offset);
+
+	/* Write previous status with bit turned off */
+	writel((~status) | bit, rgu_base + ctrl_offset);
+
+	udelay(rc->delay_us);
+
+	return 0;
+}
+
+static int lpc18xx_reset_deassert(struct reset_controller_dev *rcdev,
+				  unsigned long id)
+{
+	struct lpc18xx_reset_data *rc;
+	u32 ctrl_offset, status_offset;
+	u32 bit;
+	u32 status;
+
+	rc = container_of(rcdev, struct lpc18xx_reset_data, rcdev);
+
+	/* Get register offsets */
+	switch (id / LPC18XX_RGU_RESETS_PER_REG) {
+		case 0:
+			ctrl_offset = LPC18XX_RGU_CTRL0;
+			status_offset = LPC18xx_RGU_ACTIVE_STATUS0;
+			break;
+		case 1:
+			ctrl_offset = LPC18XX_RGU_CTRL1;
+			status_offset = LPC18xx_RGU_ACTIVE_STATUS1;
+			break;
+		default:
+			return -EINVAL;
+	}
+
+	bit = BIT(id % LPC18XX_RGU_RESETS_PER_REG);
+
+	/* Current status: 0 = Reset asserted, 1 = No reset.
+	 * It's the opposite to the values for control register.
+	 * */
+	status = readl(rgu_base + status_offset);
+
+	/* Write previous status with bit turned off */
+	writel((~status) & (~bit), rgu_base + ctrl_offset);
 
 	udelay(rc->delay_us);
 
@@ -69,6 +131,7 @@ static int lpc18xx_reset_assert(struct reset_controller_dev *rcdev,
 
 static struct reset_control_ops lpc18xx_reset_ops = {
 	.assert		= lpc18xx_reset_assert,
+	.deassert	= lpc18xx_reset_deassert,
 };
 
 static int lpc18xx_reset_probe(struct platform_device *pdev)
