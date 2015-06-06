@@ -26,13 +26,19 @@
 	};
 
 	chosen {
-		bootargs = "console=ttyS0,115200 earlyprintk";
+		bootargs = "console=ttyS0,115200n8 earlyprintk root=mtd0 rootfstype=romfs ro clk_ignore_unused";
 		stdout-path = &uart2;
 	};
 
 	memory {
 		device_type = "memory";
 		reg = <0x28000000 0x0800000>; /* 8 MB */
+	};
+
+	flash {
+		compatible = "mtd-rom";
+		reg = <0x14300000 0x100000>;
+		bank-width = <1>;
 	};
 };
 
