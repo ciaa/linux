@@ -12,6 +12,7 @@
  */
 #include <linux/linkage.h>
 #include <asm/assembler.h>
+#include <asm/memory.h>
 #include <asm/v7m.h>
 #include "proc-macros.S"
 
@@ -103,7 +104,11 @@ __v7m_setup:
 	str	r1, [r12, #11 * 4]	@ write the temporary SVC vector entry
 	mov	r6, lr			@ save LR
 	mov	r7, sp			@ save SP
-	ldr	sp, =__v7m_setup_stack_top
+#ifndef CONFIG_XIP_KERNEL
+	ldr     sp, =__v7m_setup_stack_top
+#else
+	ldr	r12, =PLAT_PHYS_OFFSET		@ the local stack
+#endif
 	cpsie	i
 	svc	#0
 1:	cpsid	i
