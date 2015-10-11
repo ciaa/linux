@@ -1,0 +1,15 @@
+# Following script allows to boot the CIAA as XIP
+
+dtb=${KBUILD_OUTPUT}/arch/arm/boot/dts/lpc4337-ciaa.dtb
+kernel=${KBUILD_OUTPUT}/arch/arm/boot/xipImage
+
+# Build kernel image and DTB
+make xipImage dtbs
+
+# Prepare the U-Boot XIP image
+dd if=/dev/zero bs=64 count=1 | tr "\000" "\377" > hdr.bin
+cat hdr.bin ${kernel} > ${KBUILD_OUTPUT}/xip.img
+./scripts/mkuboot.sh -x -A arm -O linux -T kernel -C none -a 0x14000000 -e 0x14000041 -n "CIAA XIP Linux" -d ${KBUILD_OUTPUT}/xip.img xipuImage
+
+# And now the xipuImage is ready to be flashed on the SPIFI
+cp xipuImage /srv/tftp/uImage-ciaa-nxp -v
